@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Default implementation of [JdbcPartitionFactory]. */
 @Singleton
-class DefaultJdbcPartitionFactory(
+open class DefaultJdbcPartitionFactory(
     override val sharedState: DefaultJdbcSharedState,
     val handler: CatalogValidationFailureHandler,
     val selectQueryGenerator: SelectQueryGenerator,

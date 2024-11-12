@@ -9,6 +9,7 @@ import io.airbyte.cdk.read.FeedBootstrap
 import io.airbyte.cdk.read.GlobalFeedBootstrap
 import io.airbyte.cdk.read.PartitionsCreator
 import io.airbyte.cdk.read.PartitionsCreatorFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.micronaut.core.annotation.Order
 import jakarta.inject.Singleton
 import java.util.concurrent.atomic.AtomicReference
@@ -21,6 +22,7 @@ class CdcPartitionsCreatorFactory<T : Comparable<T>>(
     val globalLockResource: CdcGlobalLockResource,
     val debeziumOps: DebeziumOperations<T>,
 ) : PartitionsCreatorFactory {
+    private val log = KotlinLogging.logger {}
 
     /**
      * [AtomicReference] to a WAL position lower bound value shared by all [CdcPartitionsCreator]s.
@@ -38,6 +40,7 @@ class CdcPartitionsCreatorFactory<T : Comparable<T>>(
     override fun make(feedBootstrap: FeedBootstrap<*>): PartitionsCreator? {
         if (feedBootstrap !is GlobalFeedBootstrap) {
             // Fall through on non-Global streams.
+            log.info { "feedBootstrap is not global. Returning null." }
             return null
         }
         return CdcPartitionsCreator(

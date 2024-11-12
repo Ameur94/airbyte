@@ -312,6 +312,7 @@ class JdbcMetadataQuerier(
         val rows: List<PrimaryKeyRow> = results.groupBy { it.name }.values.firstOrNull() ?: listOf()
         val pk: List<List<String>> = rows.sortedBy { it.ordinal }.map { listOf(it.columnName) }
         memoizedPrimaryKeys[table] = pk
+        log.info {"Primary key in $streamID is $pk"}
         return pk
     }
 

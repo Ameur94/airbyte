@@ -8,18 +8,22 @@ import io.airbyte.cdk.jdbc.JsonStringFieldType
 import io.airbyte.cdk.jdbc.NCharacterStreamFieldType
 import io.airbyte.cdk.jdbc.NClobFieldType
 import io.airbyte.protocol.models.v0.SyncMode
+import io.github.oshai.kotlinlogging.KotlinLogging
 
+private val log = KotlinLogging.logger {}
 /** [JdbcAirbyteStreamFactory] implements [createGlobal] and [createNonGlobal] for JDBC sourcesx. */
 interface JdbcAirbyteStreamFactory : AirbyteStreamFactory, MetaFieldDecorator {
 
     override fun createGlobal(discoveredStream: DiscoveredStream) =
         AirbyteStreamFactory.createAirbyteStream(discoveredStream).apply {
             if (hasValidPrimaryKey(discoveredStream)) {
+                log.info {"creating resumable global for $discoveredStream"}
                 decorateAirbyteStream(this)
                 supportedSyncModes = listOf(SyncMode.FULL_REFRESH, SyncMode.INCREMENTAL)
                 sourceDefinedPrimaryKey = discoveredStream.primaryKeyColumnIDs
                 isResumable = true
             } else {
+                log.info {"creating non-resumable global for $discoveredStream"}
                 supportedSyncModes = listOf(SyncMode.FULL_REFRESH)
                 sourceDefinedCursor = false
                 isResumable = false
@@ -29,8 +33,10 @@ interface JdbcAirbyteStreamFactory : AirbyteStreamFactory, MetaFieldDecorator {
     override fun createNonGlobal(discoveredStream: DiscoveredStream) =
         AirbyteStreamFactory.createAirbyteStream(discoveredStream).apply {
             if (hasCursorFields(discoveredStream)) {
+                log.info {"creating non global with incremental for $discoveredStream"}
                 supportedSyncModes = listOf(SyncMode.FULL_REFRESH, SyncMode.INCREMENTAL)
             } else {
+                log.info {"creating non global without incremental for $discoveredStream"}
                 supportedSyncModes = listOf(SyncMode.FULL_REFRESH)
             }
             sourceDefinedCursor = false
@@ -89,6 +95,10 @@ interface JdbcAirbyteStreamFactory : AirbyteStreamFactory, MetaFieldDecorator {
      * to round-trip the column values, we need to be able to query the max value from the source at
      * the start of the sync.
      */
-    fun isPossibleCursor(field: Field): Boolean =
-        isPossiblePrimaryKeyElement(field) && field.type !is BooleanFieldType
+    fun isPossibleCursor(field: Field): Boolean {
+        val retVal =  isPossiblePrimaryKeyElement(field) && field.type !is BooleanFieldType
+        log.info { "field $field: isPossiblePrimary=${isPossiblePrimaryKeyElement(field)}, type=$field.type}, retVal=$retVal" }
+        return retVal
+    }
+
 }

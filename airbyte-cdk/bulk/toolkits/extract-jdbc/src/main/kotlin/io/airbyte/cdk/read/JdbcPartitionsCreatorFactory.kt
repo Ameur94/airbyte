@@ -5,6 +5,7 @@
 package io.airbyte.cdk.read
 
 import io.airbyte.cdk.jdbc.JDBC_PROPERTY_PREFIX
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.micronaut.context.annotation.Requires
 import jakarta.inject.Singleton
 
@@ -16,10 +17,16 @@ sealed class JdbcPartitionsCreatorFactory<
 >(
     val partitionFactory: JdbcPartitionFactory<A, S, P>,
 ) : PartitionsCreatorFactory {
+    private val log = KotlinLogging.logger {}
 
     override fun make(feedBootstrap: FeedBootstrap<*>): PartitionsCreator? {
-        if (feedBootstrap !is StreamFeedBootstrap) return null
+        log.info { "${this.javaClass.simpleName} making partition for $feedBootstrap" }
+        if (feedBootstrap !is StreamFeedBootstrap) {
+            log.info {"feedBootstrap is not StreamFeedBootstrap. is ${feedBootstrap.javaClass.simpleName}. Returning null"}
+            return null
+        }
         val partition: P = partitionFactory.create(feedBootstrap) ?: return CreateNoPartitions
+        log.info { "partition=$partition" }
         return partitionsCreator(partition)
     }
 
